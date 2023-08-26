@@ -1,0 +1,242 @@
+﻿<Window x:Class="GpsIntersect.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf" 
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:maths="clr-namespace:GpsIntersect.Maths" 
+        xmlns:models="clr-namespace:GpsIntersect.Models" 
+        mc:Ignorable="d"
+        DataContext="{Binding Main, Source={StaticResource Locator}}"
+        Title="{Binding AppTitle}" Width="1024" Height="768"
+        Initialized="Window_Initialized"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition>
+                <RowDefinition.Style>
+                    <Style TargetType="{x:Type RowDefinition}">
+                        <Setter Property="Height" Value="22" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusBarVisibility}" Value="False">
+                                <Setter Property="Height" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </RowDefinition.Style>
+            </RowDefinition>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0">
+            <Menu>
+                <MenuItem Header="_File">
+                    <MenuItem Header="_New" Name="New" Command="{Binding NewCommand }" />
+                    <MenuItem Header="_Open..." Name="Open" Command="{Binding OpenFileCommand}" />
+                    <MenuItem Header="_Save As..." Name="SaveAs" Command="{Binding SaveAsCommand}" IsEnabled="{Binding CanSaveFile}"  />
+                    <Separator/>
+                    <MenuItem Header="E_xit" Name="Exit" Command="{Binding ExitCommand}" />
+                </MenuItem>
+                <MenuItem Header="_Edit">
+                    <MenuItem Header="_Copy" Name="Copy" Command="{Binding CopyCommand}" CommandParameter="{Binding ElementName=MainWindowGrid}" />
+                </MenuItem>
+                <MenuItem Header="_View">
+                    <MenuItem Header="_GPS Files" IsChecked="{Binding GpsFilesVisibility}" Command="{Binding ToggleGpsFilesVisibility}" />
+                    <MenuItem Header="_Intersections" IsChecked="{Binding IntersectionsVisibility}" Command="{Binding ToggleIntersectionsVisibility}" />
+                    <MenuItem Header="_Track Points" IsChecked="{Binding TrackPointsVisibility}" Command="{Binding ToggleTrackPointsVisibility}" />
+                    <Separator/>
+                    <MenuItem Header="_Map Labels" IsChecked="{Binding MapLabelsVisibility}" Command="{Binding ToggleMapLabelsVisibility}" />
+                    <Separator/>
+                    <MenuItem Header="_Status Bar" IsChecked="{Binding StatusBarVisibility}" Command="{Binding ToggleStatusBarVisibility}"  />
+                </MenuItem>
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="_Convert File..." Name="Convert" Command="{Binding ConvertFileCommand}" IsEnabled="{Binding CanConvertFile}" />
+                </MenuItem>
+                <MenuItem Header="_Help">
+                    <MenuItem Header="_About GPS Intersect" Name="About" Command="{Binding AboutCommand}" />
+                </MenuItem>
+            </Menu>
+        </Menu>
+        <Grid Grid.Row="1" x:Name="MainWindowGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition>
+                    <RowDefinition.Style>
+                        <Style TargetType="{x:Type RowDefinition}">
+                            <Setter Property="Height" Value="1*" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding GpsFilesVisibility}" Value="False">
+                                    <Setter Property="Height" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </RowDefinition.Style>
+                </RowDefinition>
+                <RowDefinition>
+                    <RowDefinition.Style>
+                        <Style TargetType="{x:Type RowDefinition}">
+                            <Setter Property="Height" Value="auto" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding GpsFilesSeparatorVisibility}" Value="False">
+                                    <Setter Property="Height" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </RowDefinition.Style>
+                </RowDefinition>
+                <RowDefinition>
+                    <RowDefinition.Style>
+                        <Style TargetType="{x:Type RowDefinition}">
+                            <Setter Property="Height" Value="1*" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IntersectionsVisibility}" Value="False">
+                                    <Setter Property="Height" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </RowDefinition.Style>
+                </RowDefinition>
+                <RowDefinition>
+                    <RowDefinition.Style>
+                        <Style TargetType="{x:Type RowDefinition}">
+                            <Setter Property="Height" Value="auto" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IntersectionsSeparatorVisibility}" Value="False">
+                                    <Setter Property="Height" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </RowDefinition.Style>
+                </RowDefinition>
+                <RowDefinition>
+                    <RowDefinition.Style>
+                        <Style TargetType="{x:Type RowDefinition}">
+                            <Setter Property="Height" Value="1*" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding TrackPointsVisibility}" Value="False">
+                                    <Setter Property="Height" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </RowDefinition.Style>
+                </RowDefinition>
+            </Grid.RowDefinitions>
+            <ListBox ItemsSource="{Binding GpsFiles}"
+                     SelectedItem="{Binding Path=SelectedGpsFile}" 
+                     Grid.Column="0" Grid.Row="0" Width="Auto" Height="Auto">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="ToolTip" Value="{Binding Description}"/>
+                        <Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}" />
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="Remove File"
+                                          Command="{Binding PlacementTarget.Tag.RemoveGpsFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Vertical" ContextMenuService.ShowOnDisabled="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" Margin="0,0,2,0" 
+                                          IsChecked="{Binding Visible}"
+                                          Command="{Binding DataContext.GpsFileCheckedCommand, RelativeSource={RelativeSource FindAncestor,ListBox,1}}" 
+                                          CommandParameter="{Binding}"/>
+                                <TextBlock Grid.Column="1" Margin="2,-1,0,0" Text="{Binding File}"/>
+                                <Rectangle Grid.Column="2" Width="15" Margin="0,0,-3,0" Fill="{Binding ColorBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <GridSplitter Grid.Row="1"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Center"
+              ShowsPreview="True"
+              Height="5"/>
+            <TreeView x:Name="IntersectionTreeView"
+                      ItemsSource="{Binding PolygonFiles}"
+                      Grid.Column="0" Grid.Row="2" Width="Auto" Height="Auto">
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type models:PolygonFile}"
+                                    ItemsSource="{Binding Polygons}">
+                        <TextBlock Text="{Binding Name}" />
+                    </HierarchicalDataTemplate>
+                    <HierarchicalDataTemplate DataType="{x:Type maths:Polygon}"
+                                    ItemsSource="{Binding Intersections}">
+                        <TextBlock Text="{Binding Name}" />
+                    </HierarchicalDataTemplate>
+                    <DataTemplate DataType="{x:Type maths:Coordinate}">
+                        <TextBlock Text="{Binding Time, StringFormat=dd/MM/yyyy hh:mm:ss tt}" />
+                    </DataTemplate>
+                </TreeView.Resources>
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsSelected" Value="{Binding IsSelected}" />
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+                        <Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType=TreeView}}" />
+                        <Setter Property="ToolTip" Value="{Binding Description}"/>
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="Remove File"
+                                          Command="{Binding PlacementTarget.Tag.RemovePolygonFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding}">
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="SelectedItemChanged">
+                        <i:InvokeCommandAction Command="{Binding IntersectionSelectedCommand}" CommandParameter="{Binding ElementName=IntersectionTreeView, Path=SelectedItem}"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </TreeView>
+            <GridSplitter Grid.Row="3"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Center"
+              ShowsPreview="True"
+              Height="5"/>
+            <ListBox x:Name="TrackPointListBox"
+                ItemsSource="{Binding SelectedGpsFile.Coordinates}"
+                SelectedItem="{Binding Path=SelectedCoordinate}" 
+                SelectionChanged="TrackPointListBox_SelectionChanged"
+                Grid.Column="0" Grid.Row="4" Width="Auto" Height="Auto" >
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Time, StringFormat=dd/MM/yyyy hh:mm:ss tt}"></TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <GridSplitter Grid.Column="1" 
+              Grid.RowSpan="5" 
+              HorizontalAlignment="Left" 
+              VerticalAlignment="Stretch"
+              ShowsPreview="true"
+              Width="5"/>
+            <wpf:ChromiumWebBrowser x:Name="Browser" Address="{Binding BrowserAddress}" Grid.Column="2" Grid.RowSpan="5"/>
+        </Grid>
+        <StatusBar Grid.Row="2" Height="auto"/>
+    </Grid>
+</Window>

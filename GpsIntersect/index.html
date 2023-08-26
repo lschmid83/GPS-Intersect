@@ -1,0 +1,205 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/ol.css" type="text/css">
+    <style>
+        body {
+            margin: 0px;
+        }
+
+        .map {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+        }
+    </style>
+    <script src="js/ol.js"></script>
+</head>
+<body>
+    <div id="map" class="map"></div>
+    <script type="text/javascript">
+
+        // Create marker layer.
+        var markerSource = new ol.layer.Vector();
+
+        // Create marker style.
+        var markerStyle = new ol.style.Style({
+            image: new ol.style.Icon({
+                anchor: [0.5, 30],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                src: 'images/map-marker.svg'
+            })
+        });
+
+        // Create Open Layers map.
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([-3.2765753, 54.7023545]),
+                zoom: 5,
+                maxZoom: 17,
+            }),
+            controls: ol.control.defaults({ attribution: false, zoom: true, }),
+        });
+
+        // Sets the position of the map.
+        function setMapPosition(gpsFile) {
+
+            // Fit layer to extent.
+            var layers = map.getLayers().getArray()
+                .filter(layers => layers.get('name') === gpsFile.File)
+            var extent = layers[0].getSource().getFeatures()[0].getGeometry().getExtent();
+            map.getView().fit(extent, { size: map.getSize(), maxZoom: 16 })
+
+            if (!gpsFile.Visible)
+                removeMarker();
+        }
+
+        // Adds a GPS file to the map.
+        function addGpsPath(gpsFile) {
+
+            var coords = [];
+            for (i = 0; i < gpsFile.Coordinates.length; i++) {
+                coords.push([gpsFile.Coordinates[i].Lon, gpsFile.Coordinates[i].Lat]);
+            }
+            var lineString = new ol.geom.LineString(coords);
+            lineString.transform('EPSG:4326', 'EPSG:3857');
+
+            var feature = new ol.Feature({
+                geometry: lineString,
+                name: 'Line'
+            });
+
+            var lineStyle = new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: gpsFile.ColorRgb,
+                    width: 2
+                })
+            });
+
+            var source = new ol.source.Vector({
+                features: [feature],
+            });
+
+            var gpsLayer = new ol.layer.Vector({
+                source: source,
+                style: [lineStyle],
+                name: gpsFile.File
+            });
+            map.addLayer(gpsLayer);
+
+            // Fit layer to extent.
+            var extent = gpsLayer.getSource().getFeatures()[0].getGeometry().getExtent();
+            map.getView().fit(extent, { size: map.getSize(), maxZoom: 16 })
+        }
+
+        // Removes a GPS file from the map.
+        function removeGpsPath(gpsFile) {
+
+            var layers = map.getLayers().getArray()
+                .filter(layers => layers.get('name') === gpsFile.File)
+            map.removeLayer(layers[0]);
+            removeMarker();
+        }
+
+        // Sets GPS path visibility.
+        function setGpsPathVisibility(gpsFile) {
+            var layers = map.getLayers().getArray()
+                .filter(layers => layers.get('name') === gpsFile.File)
+            layers[0].setVisible(gpsFile.Visible);
+
+            if (!gpsFile.Visible)
+                removeMarker();
+        }
+
+        // Sets map marker position.
+        function setMarkerPosition(coordinate) {
+
+            removeMarker();
+
+            var markerFeature = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([coordinate.Lon, coordinate.Lat]))
+            })
+            markerFeature.setStyle(markerStyle);
+
+            var markerLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    features: [markerFeature]
+                }),
+                name: "Marker"
+            });
+            map.addLayer(markerLayer);
+        }
+
+        // Sets map marker visibility.
+        function removeMarker() {   
+            map.getLayers().getArray()
+                .filter(layers => layers.get('name') === 'Marker')
+                .forEach(layers => map.removeLayer(layers));
+        }
+
+        // Adds a polygon file to the map.
+        function addPolygonMap(polygonFile) {
+
+            // Create filled polygon style.
+            var polygonStyle = new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(255,0,0,1.0)',
+                    width: 1
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(255,0,0,0.3)'
+                })
+            });
+
+            // Add polygon layers to map.
+            for (i = 0; i < polygonFile.Polygons.length; i++) {
+
+                var coordinates = [];
+                for (c = 0; c < polygonFile.Polygons[i].Coordinates.length; c++) {
+                    coordinates.push([polygonFile.Polygons[i].Coordinates[c].Lon, polygonFile.Polygons[i].Coordinates[c].Lat]);
+                }
+
+                var feature = new ol.Feature({
+                    geometry: new ol.geom.Polygon([coordinates])
+                });
+
+                feature.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                var vectorSource = new ol.source.Vector({
+                    features: [feature]
+                });
+
+                var polygonLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: [polygonStyle],
+                    name: polygonFile.Polygons[i].Name          
+                });
+
+                map.addLayer(polygonLayer);
+            }
+
+            // Set map position.
+            var extent = polygonLayer.getSource().getFeatures()[0].getGeometry().getExtent();
+            map.getView().fit(extent, { size: map.getSize(), maxZoom: 16 })
+        }
+
+        // Removes a polygon file from the map.
+        function removePolygonMap(polygonFile) {
+
+            for (i = 0; i < polygonFile.Polygons.length; i++) {
+                var layers = map.getLayers().getArray()
+                    .filter(layers => layers.get('name') === polygonFile.Polygons[i].Name);
+                map.removeLayer(layers[0]);
+            }
+        }
+
+    </script>
+</body>
+</html>
