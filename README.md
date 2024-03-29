@@ -13,7 +13,7 @@ It was developed in Visual Studio 2022 using the following technologies:
 
 Here is a screenshot of the application running:
 
-<img align='left' src='https://drive.google.com/uc?id=10HW2hevK_BxcGgBzcSrSTMVkf854L7c0' width='240'>
+<img src='https://drive.google.com/uc?id=10HW2hevK_BxcGgBzcSrSTMVkf854L7c0' width='240'>
 
 I have provided examples of GPS files in both formats and a polygon map which can be opened from the executable folder. You can create your own polygon maps online using the Google Earth application.
 
